@@ -30,7 +30,30 @@ try {
             case 'all_users':
                 echo json_encode(['success'=>true,'data'=>$ctrl->getAllUsers()]); break;
             case 'pending_applications':
-                echo json_encode(['success'=>true,'data'=>$ctrl->getAllPendingApplications()]); break;
+              try {
+                $pdo = (new ReflectionClass($ctrl))->getProperty('pdo');
+                $pdo->setAccessible(true);
+                $db = $pdo->getValue($ctrl);
+                $stmt = $db->query("SELECT cm.member_id, cm.user_id, cm.club_id, cm.status, cm.applied_at,
+                CONCAT(u.first_name,' ',u.last_name) as student_name, u.email, u.registration_number,
+                c.club_name, c.category,
+                CONCAT(l.first_name,' ',l.last_name) as leader_name
+                FROM club_members cm
+                JOIN users u ON cm.user_id = u.user_id
+                JOIN clubs c ON cm.club_id = c.club_id
+                LEFT JOIN users l ON c.leader_id = l.user_id
+                WHERE cm.status = 'pending'
+                ORDER BY cm.applied_at ASC");
+            if ($stmt === false) {
+            echo json_encode(['success'=>false,'error'=>$db->errorInfo()]);
+        } else {
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            echo json_encode(['success'=>true,'data'=>$rows,'count'=>count($rows)]);
+        }
+    } catch (Exception $e) {
+        echo json_encode(['success'=>false,'error'=>$e->getMessage()]);
+    }
+    break;
             case 'leadership_applications':
                 echo json_encode(['success'=>true,'data'=>$ctrl->getLeadershipApplications()]); break;
             case 'announcements':
