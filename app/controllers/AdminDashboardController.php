@@ -113,7 +113,7 @@ class AdminDashboardController {
     // -------------------------------------------------------
     public function getAllPendingApplications() {
         try {
-            $stmt = $this->pdo->query("SELECT cm.member_id, cm.user_id, cm.club_id, cm.status, cm.applied_at, cm.application_data,
+           $stmt = $this->pdo->query("SELECT cm.member_id, cm.user_id, cm.club_id, cm.status, cm.applied_at,
                 CONCAT(u.first_name,' ',u.last_name) as student_name, u.email, u.registration_number,
                 c.club_name, c.category,
                 CONCAT(l.first_name,' ',l.last_name) as leader_name
@@ -123,7 +123,7 @@ class AdminDashboardController {
                 LEFT JOIN users l ON c.leader_id = l.user_id
                 WHERE cm.status = 'pending'
                 ORDER BY cm.applied_at ASC");
-            return $stmt->fetchAll();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) { return []; }
     }
 
