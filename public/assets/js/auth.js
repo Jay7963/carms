@@ -52,11 +52,15 @@ $(document).ready(function () {
                     }
 
                     // Redirect to the correct portal
-                    let redirect = '/student/dashboard';
-                    if (selectedCard === 'admin' && isAdmin)       redirect = '/admin/dashboard';
-                    else if (selectedCard === 'leader' && isLeader) redirect = '/leader/dashboard';
-                    else if (isAdmin)                               redirect = '/admin/dashboard';
-                    else if (isLeader)                              redirect = '/leader/dashboard';
+                   // Redirect only to selected portal
+let redirect = '/student/dashboard';
+if (selectedCard === 'admin' && isAdmin)        redirect = '/admin/dashboard';
+else if (selectedCard === 'leader' && isLeader) redirect = '/leader/dashboard';
+else if (selectedCard === 'student' && !isStudent) {
+    btn.prop('disabled', false).html('Sign In');
+    showMessage('You do not have Student privileges. Please select the correct portal.', 'danger');
+    return;
+}
 
                     setTimeout(function () {
                         window.location.href = redirect;
