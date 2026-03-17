@@ -19,7 +19,7 @@ class AdminDashboardController {
         try {
             $stats = [];
             $queries = [
-                'total_users'         => "SELECT COUNT(*) FROM users WHERE is_active = 1",
+                'total_users'         => "SELECT COUNT(*) FROM users",
                 'total_clubs'         => "SELECT COUNT(*) FROM clubs",
                 'approved_clubs'      => "SELECT COUNT(*) FROM clubs WHERE status = 'approved'",
                 'pending_clubs'       => "SELECT COUNT(*) FROM clubs WHERE status = 'pending'",
@@ -113,7 +113,7 @@ class AdminDashboardController {
     // -------------------------------------------------------
     public function getAllPendingApplications() {
         try {
-           $stmt = $this->pdo->query("SELECT cm.member_id, cm.user_id, cm.club_id, cm.status, cm.applied_at,
+            $stmt = $this->pdo->query("SELECT cm.member_id, cm.user_id, cm.club_id, cm.status, cm.applied_at, cm.application_data,
                 CONCAT(u.first_name,' ',u.last_name) as student_name, u.email, u.registration_number,
                 c.club_name, c.category,
                 CONCAT(l.first_name,' ',l.last_name) as leader_name
@@ -223,24 +223,24 @@ class AdminDashboardController {
     // -------------------------------------------------------
     public function createAnnouncement($title, $message, $admin_id, $scope = 'system', $club_id = null) {
         try {
-            $stmt = $this->pdo->prepare("INSERT INTO announcements (title, message, club_id, created_by, scope) VALUES (?,?,?,?,?)");
-            $stmt->execute([$title, $message, $club_id, $admin_id, $scope]);
+            $stmt = $this->pdo->prepare("INSERT INTO announcements (title, content, message, club_id, author_id, created_by, audience, scope) VALUES (?,?,?,?,?,?,?,?)");
+            $stmt->execute([$title, $message, $message, $club_id, $admin_id, $admin_id, 'all', $scope]);
 
-            // Send notification to all active users
-            $users = $this->pdo->query("SELECT user_id FROM users WHERE is_active = 1");
+            // Send notification to all users
+            $users = $this->pdo->query("SELECT user_id FROM users");
             foreach ($users->fetchAll() as $u) {
                 $this->createNotification($u['user_id'], $title, $message, 'info');
             }
             return ['success' => true, 'message' => 'Announcement sent to all users.'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Failed to send announcement.'];
+            return ['success' => false, 'message' => 'Failed to send announcement: ' . $e->getMessage()];
         }
     }
 
     public function getAnnouncements() {
         try {
             $stmt = $this->pdo->query("SELECT a.*, CONCAT(u.first_name,' ',u.last_name) as created_by_name
-                FROM announcements a JOIN users u ON a.created_by = u.user_id
+                FROM announcements a JOIN users u ON a.author_id = u.user_id
                 ORDER BY a.created_at DESC LIMIT 20");
             return $stmt->fetchAll();
         } catch (PDOException $e) { return []; }
